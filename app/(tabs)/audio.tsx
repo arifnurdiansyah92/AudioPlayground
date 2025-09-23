@@ -46,6 +46,12 @@ const AudioScreen: React.FC = () => {
     })();
   }, []);
 
+  useEffect(() => {
+    if (recordedUri) {
+      recordedPlayer.replace(recordedUri);
+    }
+  }, [recordedUri]);
+
   // --- Handlers ---
   const togglePlayUrl = async () => {
     if (urlStatus.playing) {
@@ -58,6 +64,7 @@ const AudioScreen: React.FC = () => {
   const startRecording = async () => {
     try {
       await recorder.prepareToRecordAsync();
+      console.log("recording started");
       recorder.record(); // start
     } catch (e) {
       console.error("Failed to start recording", e);
@@ -68,7 +75,12 @@ const AudioScreen: React.FC = () => {
     try {
       await recorder.stop(); // after stop, uri available on recorder.uri
       if (recorder.uri) {
+        console.log("the recorded audio URI:", recorder.uri);
         setRecordedUri(recorder.uri);
+        console.log(
+          "stopped recording. Now the recordedUri changes to:",
+          recordedUri
+        );
       }
     } catch (e) {
       console.error("Failed to stop recording", e);
@@ -76,8 +88,10 @@ const AudioScreen: React.FC = () => {
   };
 
   const togglePlayRecorded = async () => {
+    console.log("togglePlayRecorded called, recordedUri:", recordedUri);
     if (!recordedUri) return;
     if (recordedStatus.playing) {
+      console.log("here? playing?");
       recordedPlayer.pause();
     } else {
       // ensure we replay from the start if it already finished
@@ -85,9 +99,11 @@ const AudioScreen: React.FC = () => {
         recordedPlayer.paused &&
         recordedStatus.currentTime >= recordedStatus.duration
       ) {
+        console.log("ended?");
         await recordedPlayer.seekTo(0);
       }
       recordedPlayer.play();
+      console.log("this code is running?");
     }
   };
 
@@ -101,6 +117,8 @@ const AudioScreen: React.FC = () => {
           title={urlStatus.playing ? "Pause Sound" : "Play Sample Sound"}
           onPress={togglePlayUrl}
         />
+        <Text>URL is playing? {urlStatus.currentTime}</Text>
+        <Text>URL Status duration: {urlStatus.duration}</Text>
       </View>
 
       <View style={styles.section}>
@@ -117,6 +135,9 @@ const AudioScreen: React.FC = () => {
         <Text style={styles.statusText}>
           {recState.isRecording ? "Recording..." : "Tap mic to record"}
         </Text>
+        <Text>Is recording: {recState.isRecording ? "Yes" : "No"}</Text>
+        <Text>Duration recording: {recState.durationMillis / 1000}</Text>
+        <Text>Can Record: {recState.canRecord ? "Yes" : "No"}</Text>
       </View>
 
       <View style={styles.section}>
@@ -124,7 +145,6 @@ const AudioScreen: React.FC = () => {
         <Button
           title={recordedStatus.playing ? "Pause Recording" : "Play Recording"}
           onPress={togglePlayRecorded}
-          disabled={!recordedUri}
         />
         {recordedUri && (
           <Text style={styles.uriText} selectable>
