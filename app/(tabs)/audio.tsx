@@ -1,15 +1,14 @@
 import { Feather } from "@expo/vector-icons";
 import {
   RecordingPresets,
-  requestRecordingPermissionsAsync,
   setAudioModeAsync,
   useAudioPlayer,
   useAudioPlayerStatus,
   useAudioRecorder,
-  useAudioRecorderState,
+  useAudioRecorderState
 } from "expo-audio";
 import React, { useEffect, useState } from "react";
-import { Alert, Button, Pressable, StyleSheet, Text, View } from "react-native";
+import { Button, Pressable, StyleSheet, Text, View } from "react-native";
 
 const AudioScreen: React.FC = () => {
   // --- URL playback (expo-audio player) ---
@@ -29,23 +28,6 @@ const AudioScreen: React.FC = () => {
   const recordedPlayer = useAudioPlayer(recordedUri ?? null);
   const recordedStatus = useAudioPlayerStatus(recordedPlayer);
 
-  // Permissions + audio mode
-  useEffect(() => {
-    (async () => {
-      const { granted } = await requestRecordingPermissionsAsync();
-      if (!granted) {
-        Alert.alert(
-          "Permission needed",
-          "Microphone permission is required to record audio."
-        );
-      }
-      await setAudioModeAsync({
-        playsInSilentMode: true,
-        allowsRecording: true,
-      });
-    })();
-  }, []);
-
   useEffect(() => {
     if (recordedUri) {
       recordedPlayer.replace(recordedUri);
@@ -63,6 +45,9 @@ const AudioScreen: React.FC = () => {
 
   const startRecording = async () => {
     try {
+      await setAudioModeAsync({
+        allowsRecording: true,
+      });
       await recorder.prepareToRecordAsync();
       console.log("recording started");
       recorder.record(); // start
@@ -73,6 +58,9 @@ const AudioScreen: React.FC = () => {
 
   const stopRecording = async () => {
     try {
+      await setAudioModeAsync({
+        allowsRecording: false,
+      });
       await recorder.stop(); // after stop, uri available on recorder.uri
       if (recorder.uri) {
         console.log("the recorded audio URI:", recorder.uri);
@@ -89,6 +77,9 @@ const AudioScreen: React.FC = () => {
 
   const togglePlayRecorded = async () => {
     console.log("togglePlayRecorded called, recordedUri:", recordedUri);
+    await setAudioModeAsync({
+      allowsRecording: false,
+    });
     if (!recordedUri) return;
     if (recordedStatus.playing) {
       console.log("here? playing?");
